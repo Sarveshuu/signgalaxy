@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Galaxy - A Cosmic Exploration</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* --- Basic Setup & Background --- */
+        :root {
+            --orange-glow: #ff9900;
+            --deep-space: #0a011a;
+            --text-color: #e0e0e0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-color);
+            background: linear-gradient(135deg, #2a0845, #6441a5, #ff5e62, #ff9966);
+            background: #000;
+            overflow-x: hidden;
+        }
+
+        /* The animated starfield canvas */
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* --- Main Layout & Sections --- */
+        .galaxy-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .galaxy-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden; /* Important for parallax containment */
+        }
+        
+        .section-content {
+            text-align: center;
+            max-width: 600px;
+            z-index: 2;
+            position: relative;
+        }
+
+        .section-content h1, .section-content h2 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255, 153, 0, 0.5);
+            margin: 0 0 1rem 0;
+        }
+        
+        .section-content p {
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        
+        /* Arrow to indicate scrolling */
+        .scroll-down {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 50px;
+            border: 2px solid white;
+            border-radius: 50px;
+            opacity: 0.7;
+        }
+        .scroll-down::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            animation: scroll-animation 2s infinite;
+        }
+
+        @keyframes scroll-animation {
+            0% { opacity: 1; top: 10px; }
+            100% { opacity: 0; top: 30px; }
+        }
+
+        /* --- Planets & Floating Tokens --- */
+        .planet {
+            width: clamp(150px, 30vw, 250px);
+            height: clamp(150px, 30vw, 250px);
+            border-radius: 50%;
+            position: absolute;
+            z-index: 1;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            will-change: transform; /* Performance hint */
+        }
+
+        .planet:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 50px var(--orange-glow), 0 0 100px rgba(255, 153, 0, 0.5);
+        }
+
+        #planet-quests {
+            background: radial-gradient(circle, #ffaf40, #ff7e5f);
+            top: 20%; right: 10%;
+        }
+        #planet-staking {
+            background: radial-gradient(circle, #74ebd5, #acb6e5);
+            top: 55%; left: 15%;
+        }
+        #planet-community {
+            background: radial-gradient(circle, #ff512f, #dd2476);
+            top: 25%; left: 10%;
+        }
+        #planet-wallet {
+            background: radial-gradient(circle, #42275a, #734b6d);
+            top: 60%; right: 12%;
+        }
+
+        .sign-token {
+            position: absolute;
+            width: clamp(30px, 5vw, 60px);
+            height: clamp(30px, 5vw, 60px);
+            background: radial-gradient(circle, #ffd58a, #fca600);
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 15px var(--orange-glow);
+            z-index: 3;
+        }
+        
+        /* --- Modal Window --- */
+        #modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        #modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: rgba(10, 1, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 2rem 3rem;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        
+        #modal.show .modal-content {
+            transform: scale(1);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2rem;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .close-modal:hover {
+            transform: rotate(90deg);
+        }
+
+        #modal-title {
+            margin-top: 0;
+            font-size: 2rem;
+            color: var(--orange-glow);
+        }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="starfield"></canvas>
+    
+    <div class="galaxy-container">
+        <!-- Section 1: Mission Control -->
+        <section id="home" class="galaxy-section">
+            <div class="section-content">
+                <h1>Welcome to Sign Galaxy</h1>
+                <p>An interactive journey through the Sign Protocol ecosystem. Scroll down to begin your cosmic exploration and discover the core features that power the nation of truth and identity.</p>
+                <div class="scroll-down"></div>
+            </div>
+             <!-- Floating Sign Tokens for this section -->
+            <div class="sign-token" style="top: 15%; left: 10%;"></div>
+            <div class="sign-token" style="top: 80%; right: 15%;"></div>
+            <div class="sign-token" style="top: 50%; left: 25%;"></div>
+        </section>
+
+        <!-- Section 2: Quests HQ -->
+        <section id="quests" class="galaxy-section">
+            <div id="planet-quests" class="planet" data-planet="quests"></div>
+            <div class="section-content">
+                <h2>Quests HQ</h2>
+                <p>Embark on missions and challenges. The Quest planet is your hub for community engagement, learning, and earning rewards. Click the planet to learn more.</p>
+            </div>
+        </section>
+
+        <!-- Section 3: Staking Station -->
+        <section id="staking" class="galaxy-section">
+            <div id="planet-staking" class="planet" data-planet="staking"></div>
+            <div class="section-content">
+                <h2>Staking Station</h2>
+                <p>Power the ecosystem and earn yield. At the Staking Station, your $SIGN tokens contribute to the network's security and value. Click the planet to explore the benefits.</p>
+            </div>
+        </section>
+
+        <!-- Section 4: Community Nebula -->
+        <section id="community" class="galaxy-section">
+            <div id="planet-community" class="planet" data-planet="community"></div>
+            <div class="section-content">
+                <h2>Community Nebula</h2>
+                <p>A vibrant cluster of creators and believers. The Community Nebula is where ideas are born and culture is built. Discover the Orange Dynasty. Click the planet to join the nation.</p>
+            </div>
+        </section>
+
+        <!-- Section 5: Wallet Satellite -->
+        <section id="wallet" class="galaxy-section">
+            <div id="planet-wallet" class="planet" data-planet="wallet"></div>
+            <div class="section-content">
+                <h2>Your Wallet Satellite</h2>
+                <p>Your on-chain passport and identity. The Wallet Satellite, powered by SignPass, securely holds your assets, credentials, and reputation across the web3 universe. Click to see how it works.</p>
+            </div>
+            <!-- Floating Sign Tokens for this section -->
+            <div class="sign-token" style="bottom: 20%; left: 8%;"></div>
+            <div class="sign-token" style="bottom: 40%; right: 30%;"></div>
+        </section>
+    </div>
+
+    <!-- Modal Structure -->
+    <div id="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 id="modal-title">Planet Details</h3>
+            <p id="modal-text">Details about the selected feature will appear here.</p>
+        </div>
+    </div>
+
+    <!-- GSAP CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/ScrollTrigger.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 1. ANIMATED STARFIELD ---
+            const canvas = document.getElementById('starfield');
+            const ctx = canvas.getContext('2d');
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            const stars = [];
+            const numStars = 300;
+
+            for (let i = 0; i < numStars; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    alpha: Math.random(),
+                    velocity: {
+                        x: (Math.random() - 0.5) * 0.2,
+                        y: Math.random() * 0.2 + 0.1
+                    }
+                });
+            }
+
+            function animateStars() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                
+                stars.forEach(star => {
+                    star.x += star.velocity.x;
+                    star.y += star.velocity.y;
+
+                    if (star.y > canvas.height) {
+                        star.y = 0;
+                        star.x = Math.random() * canvas.width;
+                    }
+                    if (star.x > canvas.width) {
+                        star.x = 0;
+                    } else if (star.x < 0) {
+                        star.x = canvas.width;
+                    }
+
+                    ctx.globalAlpha = star.alpha;
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                requestAnimationFrame(animateStars);
+            }
+            animateStars();
+
+            // --- 2. GSAP ANIMATIONS ---
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Animate floating Sign tokens
+            gsap.to(".sign-token", {
+                y: "-=20",
+                duration: 2,
+                ease: "sine.inOut",
+                yoyo: true,
+                repeat: -1,
+                stagger: {
+                    each: 0.5,
+                    from: "random"
+                }
+            });
+
+            // Parallax effect for each section
+            gsap.utils.toArray(".galaxy-section").forEach(section => {
+                const planet = section.querySelector(".planet");
+                const content = section.querySelector(".section-content");
+
+                if (planet) {
+                    gsap.to(planet, {
+                        y: "-30%", // Move planet up slower for depth
+                        ease: "none",
+                        scrollTrigger: {
+                            trigger: section,
+                            start: "top bottom",
+                            end: "bottom top",
+                            scrub: true,
+                        }
+                    });
+                }
+                if (content) {
+                     gsap.to(content, {
+                        y: "-50%", // Move content up faster
+                        ease: "none",
+                        scrollTrigger: {
+                            trigger: section,
+                            start: "top bottom",
+                            end: "bottom top",
+                            scrub: true,
+                        }
+                    });
+                }
+            });
+
+            // --- 3. MODAL LOGIC ---
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalText = document.getElementById('modal-text');
+            const closeModal = document.querySelector('.close-modal');
+            const planets = document.querySelectorAll('.planet');
+
+            const modalData = {
+                quests: {
+                    title: "Quests HQ",
+                    text: "Engage in a variety of challenges designed for the community. By completing quests, you can earn exclusive rewards, gain reputation within the Orange Dynasty, and learn more about the Sign ecosystem. It's the primary hub for active participation."
+                },
+                staking: {
+                    title: "Staking Station",
+                    text: "Staking $SIGN is a crucial part of the ecosystem. It allows you to secure the network, participate in governance decisions, and earn a steady yield on your assets. Your stake is your voice and your investment in the future of Sign."
+                },
+                community: {
+                    title: "Community Nebula",
+                    text: "The heart and soul of Sign. The Community Nebula represents the Orange Dynasty, a collective of builders, artists, and believers shaping the culture of web3. Here, collaboration and innovation flourish, powered by a shared vision of truth and identity."
+                },
+                wallet: {
+                    title: "Your Wallet Satellite",
+                    text: "Powered by SignPass, your wallet is more than just a place to hold tokens. It's your on-chain passport. It manages your digital identity, tracks your achievements through credentials, and provides a secure gateway to the entire Sign ecosystem."
+                }
+            };
+            
+            planets.forEach(planet => {
+                planet.addEventListener('click', () => {
+                    const planetKey = planet.dataset.planet;
+                    if (modalData[planetKey]) {
+                        modalTitle.textContent = modalData[planetKey].title;
+                        modalText.textContent = modalData[planetKey].text;
+                        modal.classList.add('show');
+                    }
+                });
+            });
+
+            const hideModal = () => modal.classList.remove('show');
+
+            closeModal.addEventListener('click', hideModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
